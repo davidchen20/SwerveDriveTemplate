@@ -14,6 +14,9 @@
 package frc.robot.subsystems.drive;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.GoalEndState;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PathPlannerLogging;
@@ -28,8 +31,12 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.LocalADStarAK;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.littletonrobotics.junction.Logger;
 
 public class Drive extends SubsystemBase {
@@ -226,5 +233,17 @@ public class Drive extends SubsystemBase {
       new Translation2d(-TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0),
       new Translation2d(-TRACK_WIDTH_X / 2.0, -TRACK_WIDTH_Y / 2.0)
     };
+  }
+
+  public Command getOTFCommand(Pose2d... poses) {
+    List<Pose2d> points = new ArrayList<>(Arrays.asList(poses));
+
+    List<Translation2d> bezierPoints = PathPlannerPath.bezierFromPoses(points);
+    PathPlannerPath path =
+        new PathPlannerPath(
+            bezierPoints,
+            new PathConstraints(3, 3, MAX_ANGULAR_SPEED, 4 * Math.PI),
+            new GoalEndState(0.0, Rotation2d.fromDegrees(-90)));
+    return AutoBuilder.followPathWithEvents(path);
   }
 }

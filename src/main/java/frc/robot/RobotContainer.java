@@ -144,6 +144,14 @@ public class RobotContainer {
                             new Pose2d(drive.getPose().getTranslation(), new Rotation2d())),
                     drive)
                 .ignoringDisable(true));
+
+    controller
+        .a()
+        .onTrue(
+            drive.getOTFCommand(
+                new Pose2d(1, 1, Rotation2d.fromDegrees(0)),
+                new Pose2d(4, 5, Rotation2d.fromDegrees(90)),
+                new Pose2d(6, 8, Rotation2d.fromDegrees(180))));
     // controller
     //     .a()
     //     .whileTrue(
