@@ -154,12 +154,15 @@ public class Drive extends SubsystemBase {
                               -(LimelightHelpers.getLatency_Pipeline("limelight")/1000.0) 
                               -(LimelightHelpers.getLatency_Capture("limelight")/1000.0);
     
+    Pose2d visionMeasurement = new Pose2d();
     if (DriverStation.getAlliance() == Optional.of(Alliance.Blue)) {
-      poseEstimator.addVisionMeasurement(LimelightHelpers.getBotPose2d_wpiBlue("limelight"), timestampSeconds);
+      visionMeasurement = LimelightHelpers.getBotPose2d_wpiBlue("limelight");
     } 
     else if (DriverStation.getAlliance() == Optional.of(Alliance.Red)) {
-      poseEstimator.addVisionMeasurement(LimelightHelpers.getBotPose2d_wpiRed("limelight"), timestampSeconds);
+     visionMeasurement = LimelightHelpers.getBotPose2d_wpiRed("limelight");
     }
+    Logger.recordOutput("Odometry/Robot", visionMeasurement);
+    poseEstimator.addVisionMeasurement(visionMeasurement, timestampSeconds);
   }
 
   /**
