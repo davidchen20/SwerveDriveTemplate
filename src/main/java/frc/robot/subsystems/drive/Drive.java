@@ -34,6 +34,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.LimelightHelpers;
@@ -41,6 +42,8 @@ import frc.robot.util.LocalADStarAK;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+
 import org.littletonrobotics.junction.Logger;
 
 public class Drive extends SubsystemBase {
@@ -150,7 +153,13 @@ public class Drive extends SubsystemBase {
     double timestampSeconds = Timer.getFPGATimestamp() 
                               -(LimelightHelpers.getLatency_Pipeline("limelight")/1000.0) 
                               -(LimelightHelpers.getLatency_Capture("limelight")/1000.0);
-    poseEstimator.addVisionMeasurement(LimelightHelpers.getBotPose2d_wpiBlue("limelight"), timestampSeconds);
+    
+    if (DriverStation.getAlliance() == Optional.of(Alliance.Blue)) {
+      poseEstimator.addVisionMeasurement(LimelightHelpers.getBotPose2d_wpiBlue("limelight"), timestampSeconds);
+    } 
+    else if (DriverStation.getAlliance() == Optional.of(Alliance.Red)) {
+      poseEstimator.addVisionMeasurement(LimelightHelpers.getBotPose2d_wpiRed("limelight"), timestampSeconds);
+    }
   }
 
   /**
