@@ -21,6 +21,8 @@ import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
+
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -31,8 +33,10 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.util.LimelightHelpers;
 import frc.robot.util.LocalADStarAK;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,8 +57,10 @@ public class Drive extends SubsystemBase {
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
-  private Pose2d pose = new Pose2d();
+  // private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
+
+  private SwerveDrivePoseEstimator poseEstimator;
 
   public Drive(
       GyroIO gyroIO,
@@ -87,6 +93,8 @@ public class Drive extends SubsystemBase {
         (targetPose) -> {
           Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
         });
+    
+    poseEstimator = new SwerveDrivePoseEstimator(kinematics, lastGyroRotation, getModulePositions(), getPose());
   }
 
   public void periodic() {
@@ -120,18 +128,29 @@ public class Drive extends SubsystemBase {
     // The twist represents the motion of the robot since the last
     // loop cycle in x, y, and theta based only on the modules,
     // without the gyro. The gyro is always disconnected in simulation.
-    var twist = kinematics.toTwist2d(wheelDeltas);
+    // var twist = kinematics.toTwist2d(wheelDeltas);
     if (gyroInputs.connected) {
-      // If the gyro is connected, replace the theta component of the twist
-      // with the change in angle since the last loop cycle.
-      twist =
-          new Twist2d(
-              twist.dx, twist.dy, gyroInputs.yawPosition.minus(lastGyroRotation).getRadians());
+    //   // If the gyro is connected, replace the theta component of the twist
+    //   // with the change in angle since the last loop cycle.
+    //   twist =
+    //       new Twist2d(
+    //           twist.dx, twist.dy, gyroInputs.yawPosition.minus(lastGyroRotation).getRadians());
       lastGyroRotation = gyroInputs.yawPosition;
     }
-    // Apply the twist (change since last loop cycle) to the current pose
-    pose = pose.exp(twist);
+    // // Apply the twist (change since last loop cycle) to the current pose
+    // pose = pose.exp(twist);
+    updateOdometry();
     Logger.recordOutput("Odometry/Robot", getPose());
+  }
+
+  public void updateOdometry() {
+    poseEstimator.update(lastGyroRotation, getModulePositions());
+
+    // TODO:: make limelight name a constant in constants.java
+    double timestampSeconds = Timer.getFPGATimestamp() 
+                              -(LimelightHelpers.getLatency_Pipeline("limelight")/1000.0) 
+                              -(LimelightHelpers.getLatency_Capture("limelight")/1000.0);
+    poseEstimator.addVisionMeasurement(LimelightHelpers.getBotPose2d_wpiBlue("limelight"), timestampSeconds);
   }
 
   /**
@@ -202,17 +221,20 @@ public class Drive extends SubsystemBase {
 
   /** Returns the current odometry pose. */
   public Pose2d getPose() {
-    return pose;
+    // return pose;
+    return poseEstimator.getEstimatedPosition();
   }
 
   /** Returns the current odometry rotation. */
   public Rotation2d getRotation() {
-    return pose.getRotation();
+    // return pose.getRotation();
+    return poseEstimator.getEstimatedPosition().getRotation();
   }
 
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
-    this.pose = pose;
+    // this.pose = pose;
+    poseEstimator.resetPosition(lastGyroRotation, getModulePositions(), pose);
   }
 
   /** Returns the maximum linear speed in meters per sec. */
@@ -245,5 +267,15 @@ public class Drive extends SubsystemBase {
             new PathConstraints(3, 3, MAX_ANGULAR_SPEED, 4 * Math.PI),
             new GoalEndState(0.0, Rotation2d.fromDegrees(-90)));
     return AutoBuilder.followPathWithEvents(path);
+  }
+
+  public SwerveModulePosition[] getModulePositions() {
+    // TODO:: make this a constant later
+    SwerveModulePosition[] positions = new SwerveModulePosition[4];
+    for (int i = 0; i < 4; i++) {
+      positions[i] = modules[i].getPosition();
+    }
+
+    return positions;
   }
 }
