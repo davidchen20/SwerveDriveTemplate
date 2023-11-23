@@ -35,6 +35,8 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.Constants.Mode;
 import frc.robot.util.LimelightHelpers;
 import frc.robot.util.LocalADStarAK;
 import java.util.ArrayList;
@@ -132,18 +134,20 @@ public class Drive extends SubsystemBase {
     // The twist represents the motion of the robot since the last
     // loop cycle in x, y, and theta based only on the modules,
     // without the gyro. The gyro is always disconnected in simulation.
-    // var twist = kinematics.toTwist2d(wheelDeltas);
+    var twist = kinematics.toTwist2d(wheelDeltas);
     if (gyroInputs.connected) {
       //   // If the gyro is connected, replace the theta component of the twist
       //   // with the change in angle since the last loop cycle.
-      //   twist =
-      //       new Twist2d(
-      //           twist.dx, twist.dy, gyroInputs.yawPosition.minus(lastGyroRotation).getRadians());
+      // twist =
+      //     new Twist2d(
+      //         twist.dx, twist.dy, gyroInputs.yawPosition.minus(lastGyroRotation).getRadians());
       lastGyroRotation = gyroInputs.yawPosition;
     }
     // // Apply the twist (change since last loop cycle) to the current pose
     // pose = pose.exp(twist);
     updateOdometry();
+
+    // var pose = getPose().exp(twist);
     // poseEstimator.update(gyroInputs.yawPosition, getModulePositions());
 
     Logger.recordOutput("Odometry/Robot", getPose());
@@ -153,21 +157,24 @@ public class Drive extends SubsystemBase {
     poseEstimator.update(lastGyroRotation, getModulePositions());
 
     // TODO:: make limelight name a constant in constants.java
-    double timestampSeconds =
-        Timer.getFPGATimestamp()
-            - (LimelightHelpers.getLatency_Pipeline("limelight") / 1000.0)
-            - (LimelightHelpers.getLatency_Capture("limelight") / 1000.0);
+    if (Constants.currentMode != Mode.SIM) {
+      double timestampSeconds =
+          Timer.getFPGATimestamp()
+              - (LimelightHelpers.getLatency_Pipeline("limelight") / 1000.0)
+              - (LimelightHelpers.getLatency_Capture("limelight") / 1000.0);
 
-    Pose2d visionMeasurement = new Pose2d();
-    visionMeasurement = LimelightHelpers.getBotPose2d("limelight");
-    // if (DriverStation.getAlliance().get() == Alliance.Blue) {
-    //   visionMeasurement = LimelightHelpers.getBotPose2d_wpiBlue("limelight");
-    // } else if (DriverStation.getAlliance() == Optional.of(Alliance.Red)) {
-    //   visionMeasurement = LimelightHelpers.getBotPose2d_wpiRed("limelight");
-    // }
-    Logger.recordOutput("Odometry/Vision", visionMeasurement);
-    SmartDashboard.putNumber("vision x", visionMeasurement.getX());
-    poseEstimator.addVisionMeasurement(visionMeasurement, timestampSeconds);
+      Pose2d visionMeasurement = new Pose2d();
+      visionMeasurement = LimelightHelpers.getBotPose2d("limelight");
+      // if (DriverStation.getAlliance().get() == Alliance.Blue) {
+      //   visionMeasurement = LimelightHelpers.getBotPose2d_wpiBlue("limelight");
+      // } else if (DriverStation.getAlliance() == Optional.of(Alliance.Red)) {
+      //   visionMeasurement = LimelightHelpers.getBotPose2d_wpiRed("limelight");
+      // }
+      Logger.recordOutput("Odometry/Vision", visionMeasurement);
+      SmartDashboard.putNumber("vision x", visionMeasurement.getX());
+
+      poseEstimator.addVisionMeasurement(visionMeasurement, timestampSeconds);
+    }
   }
 
   /**
