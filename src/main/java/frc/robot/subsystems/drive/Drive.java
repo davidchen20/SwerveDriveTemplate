@@ -58,7 +58,7 @@ public class Drive extends SubsystemBase {
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
-  // private Pose2d pose = new Pose2d();
+  private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
 
   private SwerveDrivePoseEstimator poseEstimator;
@@ -145,12 +145,14 @@ public class Drive extends SubsystemBase {
     }
     // // Apply the twist (change since last loop cycle) to the current pose
     // pose = pose.exp(twist);
-    updateOdometry();
+    // updateOdometry();
 
     // var pose = getPose().exp(twist);
-    // poseEstimator.update(gyroInputs.yawPosition, getModulePositions());
+    poseEstimator.update(gyroInputs.yawPosition, getModulePositions());
 
-    Logger.recordOutput("Odometry/Robot", getPose());
+    // var pose = getPose().exp(twist);
+    var pose = getPose();
+    Logger.recordOutput("Odometry/Robot", pose);
   }
 
   public void updateOdometry() {
