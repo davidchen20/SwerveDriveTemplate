@@ -17,12 +17,18 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
 public class Flywheel extends SubsystemBase {
   private final FlywheelIO io;
   private final FlywheelIOInputsAutoLogged inputs = new FlywheelIOInputsAutoLogged();
   private final SimpleMotorFeedforward ffModel;
+
+  private static final LoggedTunableNumber flywheelkP = new LoggedTunableNumber("kP");
+  // private static final LoggedDashboardNumber number = new LoggedDashboardNumber("test", 10);
+
+  // private static final LoggedTunableNumber flywheelkV = new LoggedTunableNumber("Flywheel");
 
   /** Creates a new Flywheel. */
   public Flywheel(FlywheelIO io) {
@@ -37,8 +43,10 @@ public class Flywheel extends SubsystemBase {
         io.configurePID(1.0, 0.0, 0.0);
         break;
       case SIM:
-        ffModel = new SimpleMotorFeedforward(0.0, 0.03);
-        io.configurePID(0.5, 0.0, 0.0);
+        flywheelkP.initDefault(0.5);
+        // flywheelkV.initDefault(0.03);
+        ffModel = new SimpleMotorFeedforward(0.0, 0.0);
+        io.configurePID(flywheelkP.get(), 0.0, 0.0);
         break;
       default:
         ffModel = new SimpleMotorFeedforward(0.0, 0.0);
@@ -50,6 +58,11 @@ public class Flywheel extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Flywheel", inputs);
+
+    if (flywheelkP.hasChanged(hashCode())) {
+      io.configurePID(flywheelkP.get(), 0, 0);
+      // ffModel = new SimpleMotorFeedforward(0, flywheelkV.get());
+    }
 
     // Log flywheel speed in RPM
     Logger.recordOutput("FlywheelSpeedRPM", getVelocityRPM());
