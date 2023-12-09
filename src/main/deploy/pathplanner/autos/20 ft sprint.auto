@@ -2,7 +2,7 @@
   "version": 1.0,
   "startingPose": {
     "position": {
-      "x": 2.0,
+      "x": 0.0,
       "y": 7.0
     },
     "rotation": 0
@@ -12,19 +12,13 @@
     "data": {
       "commands": [
         {
-          "type": "parallel",
+          "type": "sequential",
           "data": {
             "commands": [
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Example Path"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "reset"
+                  "pathName": "20 ft sprint"
                 }
               }
             ]
