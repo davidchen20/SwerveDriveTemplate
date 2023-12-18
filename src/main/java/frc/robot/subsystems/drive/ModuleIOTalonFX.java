@@ -177,7 +177,7 @@ public class ModuleIOTalonFX implements ModuleIO {
   public void setDriveBrakeMode(boolean enable) {
     // var config = new MotorOutputConfigs();
     var config = new MotorOutputConfigs();
-    config.Inverted = InvertedValue.CounterClockwise_Positive;
+    config.Inverted = InvertedValue.Clockwise_Positive;
     config.NeutralMode = enable ? NeutralModeValue.Brake : NeutralModeValue.Coast;
     driveTalon.getConfigurator().apply(config);
   }
