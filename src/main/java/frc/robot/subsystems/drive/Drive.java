@@ -48,7 +48,7 @@ public class Drive extends SubsystemBase {
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
-  // private Pose2d pose = new Pose2d();
+  private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
 
   private final SwerveDrivePoseEstimator poseEstimator;
@@ -123,9 +123,17 @@ public class Drive extends SubsystemBase {
       Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
     }
 
+    SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
+    for (int i = 0; i < 4; i++) {
+      wheelDeltas[i] = modules[i].getPositionDelta();
+    }
+
+    var twist = kinematics.toTwist2d(wheelDeltas);
+    pose = pose.exp(twist);
+
     lastGyroRotation = gyroInputs.yawPosition;
     // poseEstimator.update();
-    poseEstimator.update(gyroInputs.yawPosition, getModulePositions());
+    poseEstimator.update(pose.getRotation(), getModulePositions());
 
     // Update odometry
     // SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
