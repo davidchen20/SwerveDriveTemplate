@@ -19,10 +19,10 @@ import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -48,8 +48,10 @@ public class Drive extends SubsystemBase {
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
-  private Pose2d pose = new Pose2d();
+  // private Pose2d pose = new Pose2d();
   private Rotation2d lastGyroRotation = new Rotation2d();
+
+  private final SwerveDrivePoseEstimator poseEstimator;
 
   public Drive(
       GyroIO gyroIO,
@@ -88,6 +90,18 @@ public class Drive extends SubsystemBase {
         (targetPose) -> {
           Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
         });
+
+    poseEstimator =
+        new SwerveDrivePoseEstimator(
+            kinematics,
+            new Rotation2d(),
+            new SwerveModulePosition[] {
+              new SwerveModulePosition(),
+              new SwerveModulePosition(),
+              new SwerveModulePosition(),
+              new SwerveModulePosition()
+            },
+            new Pose2d());
   }
 
   public void periodic() {
@@ -109,25 +123,29 @@ public class Drive extends SubsystemBase {
       Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
     }
 
+    lastGyroRotation = gyroInputs.yawPosition;
+    // poseEstimator.update();
+    poseEstimator.update(gyroInputs.yawPosition, getModulePositions());
+
     // Update odometry
-    SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
-    for (int i = 0; i < 4; i++) {
-      wheelDeltas[i] = modules[i].getPositionDelta();
-    }
-    // The twist represents the motion of the robot since the last
-    // loop cycle in x, y, and theta based only on the modules,
-    // without the gyro. The gyro is always disconnected in simulation.
-    var twist = kinematics.toTwist2d(wheelDeltas);
-    if (gyroInputs.connected) {
-      // If the gyro is connected, replace the theta component of the twist
-      // with the change in angle since the last loop cycle.
-      twist =
-          new Twist2d(
-              twist.dx, twist.dy, gyroInputs.yawPosition.minus(lastGyroRotation).getRadians());
-      lastGyroRotation = gyroInputs.yawPosition;
-    }
-    // Apply the twist (change since last loop cycle) to the current pose
-    pose = pose.exp(twist);
+    // SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
+    // for (int i = 0; i < 4; i++) {
+    //   wheelDeltas[i] = modules[i].getPositionDelta();
+    // }
+    // // The twist represents the motion of the robot since the last
+    // // loop cycle in x, y, and theta based only on the modules,
+    // // without the gyro. The gyro is always disconnected in simulation.
+    // var twist = kinematics.toTwist2d(wheelDeltas);
+    // if (gyroInputs.connected) {
+    //   // If the gyro is connected, replace the theta component of the twist
+    //   // with the change in angle since the last loop cycle.
+    //   twist =
+    //       new Twist2d(
+    //           twist.dx, twist.dy, gyroInputs.yawPosition.minus(lastGyroRotation).getRadians());
+    //   lastGyroRotation = gyroInputs.yawPosition;
+    // }
+    // // Apply the twist (change since last loop cycle) to the current pose
+    // pose = pose.exp(twist);
   }
 
   /**
@@ -200,17 +218,18 @@ public class Drive extends SubsystemBase {
   /** Returns the current odometry pose. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-    return pose;
+    return poseEstimator.getEstimatedPosition();
   }
 
   /** Returns the current odometry rotation. */
   public Rotation2d getRotation() {
-    return pose.getRotation();
+    return poseEstimator.getEstimatedPosition().getRotation();
   }
 
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
-    this.pose = pose;
+    // this.pose = pose;
+    poseEstimator.resetPosition(lastGyroRotation, getModulePositions(), pose);
   }
 
   /** Returns the maximum linear speed in meters per sec. */
@@ -231,5 +250,23 @@ public class Drive extends SubsystemBase {
       new Translation2d(-TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0),
       new Translation2d(-TRACK_WIDTH_X / 2.0, -TRACK_WIDTH_Y / 2.0)
     };
+  }
+
+  public SwerveModulePosition[] getModulePositions() {
+    SwerveModulePosition[] positions = new SwerveModulePosition[4];
+    for (int i = 0; i < 4; i++) {
+      positions[i] = modules[i].getPosition();
+    }
+
+    return positions;
+  }
+
+  public SwerveModulePosition[] getModulePositionDeltas() {
+    SwerveModulePosition[] deltas = new SwerveModulePosition[4];
+    for (int i = 0; i < 4; i++) {
+      deltas[i] = modules[i].getPositionDelta();
+    }
+
+    return deltas;
   }
 }
