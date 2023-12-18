@@ -23,7 +23,6 @@ package frc.robot;
  */
 public final class Constants {
   public static final Mode currentMode = Mode.REAL;
-
   public static final String CANBUS = "CAN Bus 2";
 
   public static enum Mode {

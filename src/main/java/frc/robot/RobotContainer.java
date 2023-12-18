@@ -14,7 +14,6 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
@@ -31,6 +30,7 @@ import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOTalonFX;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -48,8 +48,8 @@ public class RobotContainer {
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
-  // private final LoggedDashboardNumber flywheelSpeedInput =
-  //     new LoggedDashboardNumber("Flywheel Speed", 1500.0);
+  private final LoggedDashboardNumber flywheelSpeedInput =
+      new LoggedDashboardNumber("Flywheel Speed", 1500.0);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -100,17 +100,10 @@ public class RobotContainer {
 
     // Set up named commands for PathPlanner
     // NamedCommands.registerCommand(
-    //     "Run Flywheel",
-    //     Commands.startEnd(
-    //         () -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel::stop, flywheel));
+    // "Run Flywheel",
+    // Commands.startEnd(
+    // () -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel::stop, flywheel));
 
-    // NamedCommands.registerCommand("Run Flywheel", Commands.runOnce(() -> drive.setPose(new
-    // Pose2d(drive.getPose().getTranslation(), new Rotation2d())));
-
-    NamedCommands.registerCommand(
-        "reset",
-        Commands.runOnce(
-            () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), new Rotation2d()))));
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
@@ -152,14 +145,6 @@ public class RobotContainer {
                             new Pose2d(drive.getPose().getTranslation(), new Rotation2d())),
                     drive)
                 .ignoringDisable(true));
-
-    controller
-        .a()
-        .onTrue(
-            drive.getOTFCommand(
-                new Pose2d(1, 1, Rotation2d.fromDegrees(0)),
-                new Pose2d(4, 5, Rotation2d.fromDegrees(90)),
-                new Pose2d(6, 8, Rotation2d.fromDegrees(180))));
     // controller
     //     .a()
     //     .whileTrue(

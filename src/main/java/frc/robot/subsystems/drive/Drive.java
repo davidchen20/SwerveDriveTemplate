@@ -14,11 +14,9 @@
 package frc.robot.subsystems.drive;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.path.GoalEndState;
-import com.pathplanner.lib.path.PathConstraints;
-import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -31,19 +29,16 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.LocalADStarAK;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class Drive extends SubsystemBase {
   // private static final double MAX_LINEAR_SPEED = Units.feetToMeters(14.5);
-  private static final double MAX_LINEAR_SPEED = 5;
-  private static final double TRACK_WIDTH_X = Units.inchesToMeters(27.5);
-  private static final double TRACK_WIDTH_Y = Units.inchesToMeters(27.5);
+  private static final double MAX_LINEAR_SPEED = 5.56;
+  private static final double TRACK_WIDTH_X = Units.inchesToMeters(26.0);
+  private static final double TRACK_WIDTH_Y = Units.inchesToMeters(26.0);
   private static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
   private static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
@@ -75,8 +70,14 @@ public class Drive extends SubsystemBase {
         () -> kinematics.toChassisSpeeds(getModuleStates()),
         this::runVelocity,
         new HolonomicPathFollowerConfig(
-            MAX_LINEAR_SPEED, DRIVE_BASE_RADIUS, new ReplanningConfig()),
+            new PIDConstants(0.5, 0, 0, 0),
+            new PIDConstants(0.85, 0, 0, 0),
+            MAX_LINEAR_SPEED,
+            DRIVE_BASE_RADIUS,
+            new ReplanningConfig()),
         this);
+    //     MAX_LINEAR_SPEED, DRIVE_BASE_RADIUS, new ReplanningConfig()),
+    // this);
     Pathfinding.setPathfinder(new LocalADStarAK());
     PathPlannerLogging.setLogActivePathCallback(
         (activePath) -> {
@@ -102,10 +103,6 @@ public class Drive extends SubsystemBase {
         module.stop();
       }
     }
-
-    // Log measured states
-    Logger.recordOutput("SwerveStates/Measured", getModuleStates());
-
     // Log empty setpoint states when disabled
     if (DriverStation.isDisabled()) {
       Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
@@ -131,7 +128,6 @@ public class Drive extends SubsystemBase {
     }
     // Apply the twist (change since last loop cycle) to the current pose
     pose = pose.exp(twist);
-    Logger.recordOutput("Odometry/Robot", getPose());
   }
 
   /**
@@ -192,6 +188,7 @@ public class Drive extends SubsystemBase {
   }
 
   /** Returns the module states (turn angles and drive velocitoes) for all of the modules. */
+  @AutoLogOutput(key = "SwerveStates/Measured")
   private SwerveModuleState[] getModuleStates() {
     SwerveModuleState[] states = new SwerveModuleState[4];
     for (int i = 0; i < 4; i++) {
@@ -201,6 +198,7 @@ public class Drive extends SubsystemBase {
   }
 
   /** Returns the current odometry pose. */
+  @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
     return pose;
   }
@@ -233,17 +231,5 @@ public class Drive extends SubsystemBase {
       new Translation2d(-TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0),
       new Translation2d(-TRACK_WIDTH_X / 2.0, -TRACK_WIDTH_Y / 2.0)
     };
-  }
-
-  public Command getOTFCommand(Pose2d... poses) {
-    List<Pose2d> points = new ArrayList<>(Arrays.asList(poses));
-
-    List<Translation2d> bezierPoints = PathPlannerPath.bezierFromPoses(points);
-    PathPlannerPath path =
-        new PathPlannerPath(
-            bezierPoints,
-            new PathConstraints(3, 3, MAX_ANGULAR_SPEED, 4 * Math.PI),
-            new GoalEndState(0.0, Rotation2d.fromDegrees(-90)));
-    return AutoBuilder.followPathWithEvents(path);
   }
 }
