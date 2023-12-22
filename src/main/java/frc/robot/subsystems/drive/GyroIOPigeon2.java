@@ -25,7 +25,7 @@ import edu.wpi.first.math.util.Units;
 public class GyroIOPigeon2 implements GyroIO {
   private final Pigeon2 pigeon = new Pigeon2(0);
   private final StatusSignal<Double> yaw = pigeon.getYaw();
-  private final StatusSignal<Double> yawVelocity = pigeon.getAngularVelocityZ();
+  private final StatusSignal<Double> yawVelocity = pigeon.getAngularVelocityZDevice();
 
   public GyroIOPigeon2() {
     pigeon.getConfigurator().apply(new Pigeon2Configuration());
