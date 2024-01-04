@@ -31,7 +31,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
 import frc.robot.util.LimelightHelpers;
 import frc.robot.util.LocalADStarAK;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -136,16 +135,19 @@ public class Drive extends SubsystemBase {
 
     lastGyroRotation = gyroInputs.yawPosition;
     // poseEstimator.update();
-    switch (Constants.currentMode) {
-      case REAL:
-        updateOdometry();
-        break;
-      case REPLAY:
-      case SIM:
-        poseEstimator.update(pose.getRotation(), getModulePositions());
-        break;
-      default:
-    }
+    // switch (Constants.currentMode) {
+    //   case REAL:
+    //     updateOdometry();
+    //     break;
+    //   case REPLAY:
+    //   case SIM:
+    //     poseEstimator.update(pose.getRotation(), getModulePositions());
+    //     break;
+    //   default:
+    // }
+
+    // poseEstimator.update(pose.getRotation(), getModulePositions());
+    updateOdometry();
 
     // Update odometry
     // SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
@@ -173,7 +175,7 @@ public class Drive extends SubsystemBase {
 
     double timestampSeconds =
         Timer.getFPGATimestamp()
-            - (LimelightHelpers.getLatency_Pipeline("1000") / 1000.0)
+            - (LimelightHelpers.getLatency_Pipeline("lightlight") / 1000.0)
             - (LimelightHelpers.getLatency_Capture("limelight") / 1000.0);
 
     Pose2d visionMeasurement = new Pose2d();

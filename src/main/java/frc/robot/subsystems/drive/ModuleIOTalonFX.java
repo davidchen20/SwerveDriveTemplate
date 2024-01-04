@@ -66,28 +66,28 @@ public class ModuleIOTalonFX implements ModuleIO {
   public ModuleIOTalonFX(int index) {
     switch (index) {
       case 0:
-        driveTalon = new TalonFX(0, Constants.CANBUS);
-        turnTalon = new TalonFX(4, Constants.CANBUS);
-        cancoder = new CANcoder(0);
-        absoluteEncoderOffset = new Rotation2d(3.104); // MUST BE CALIBRATED
-        break;
-      case 1:
         driveTalon = new TalonFX(1, Constants.CANBUS);
         turnTalon = new TalonFX(5, Constants.CANBUS);
-        cancoder = new CANcoder(1);
-        absoluteEncoderOffset = new Rotation2d(-1.92); // MUST BE CALIBRATED
+        cancoder = new CANcoder(1, Constants.CANBUS);
+        absoluteEncoderOffset = new Rotation2d(-2.58 + 1.83); // MUST BE CALIBRATED
+        break;
+      case 1:
+        driveTalon = new TalonFX(0, Constants.CANBUS);
+        turnTalon = new TalonFX(4, Constants.CANBUS);
+        cancoder = new CANcoder(0, Constants.CANBUS);
+        absoluteEncoderOffset = new Rotation2d(-1.98); // MUST BE CALIBRATED
         break;
       case 2:
         driveTalon = new TalonFX(2, Constants.CANBUS);
         turnTalon = new TalonFX(6, Constants.CANBUS);
-        cancoder = new CANcoder(2);
-        absoluteEncoderOffset = new Rotation2d(1.59); // MUST BE CALIBRATED
+        cancoder = new CANcoder(2, Constants.CANBUS);
+        absoluteEncoderOffset = new Rotation2d(-1.93); // MUST BE CALIBRATED
         break;
       case 3:
         driveTalon = new TalonFX(3, Constants.CANBUS);
         turnTalon = new TalonFX(7, Constants.CANBUS);
-        cancoder = new CANcoder(3);
-        absoluteEncoderOffset = new Rotation2d(-0.036); // MUST BE CALIBRATED
+        cancoder = new CANcoder(3, Constants.CANBUS);
+        absoluteEncoderOffset = new Rotation2d(2.54); // MUST BE CALIBRATED
         break;
       default:
         throw new RuntimeException("Invalid module index");
