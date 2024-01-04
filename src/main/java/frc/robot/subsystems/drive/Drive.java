@@ -29,7 +29,10 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.util.LimelightHelpers;
 import frc.robot.util.LocalADStarAK;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -133,7 +136,16 @@ public class Drive extends SubsystemBase {
 
     lastGyroRotation = gyroInputs.yawPosition;
     // poseEstimator.update();
-    poseEstimator.update(pose.getRotation(), getModulePositions());
+    switch (Constants.currentMode) {
+      case REAL:
+        updateOdometry();
+        break;
+      case REPLAY:
+      case SIM:
+        poseEstimator.update(pose.getRotation(), getModulePositions());
+        break;
+      default:
+    }
 
     // Update odometry
     // SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
@@ -154,6 +166,23 @@ public class Drive extends SubsystemBase {
     // }
     // // Apply the twist (change since last loop cycle) to the current pose
     // pose = pose.exp(twist);
+  }
+
+  public void updateOdometry() {
+    poseEstimator.update(lastGyroRotation, getModulePositions());
+
+    double timestampSeconds =
+        Timer.getFPGATimestamp()
+            - (LimelightHelpers.getLatency_Pipeline("1000") / 1000.0)
+            - (LimelightHelpers.getLatency_Capture("limelight") / 1000.0);
+
+    Pose2d visionMeasurement = new Pose2d();
+
+    visionMeasurement = LimelightHelpers.getBotPose2d("limelight");
+
+    Logger.recordOutput("Odometry/Vision", visionMeasurement);
+
+    poseEstimator.addVisionMeasurement(visionMeasurement, timestampSeconds);
   }
 
   /**
