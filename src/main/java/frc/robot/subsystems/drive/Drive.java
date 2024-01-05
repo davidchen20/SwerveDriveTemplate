@@ -149,6 +149,8 @@ public class Drive extends SubsystemBase {
     // poseEstimator.update(pose.getRotation(), getModulePositions());
     updateOdometry();
 
+    // Logger.recordOutput("test", LimelightHelpers.getBotPose2d("limelight"));
+
     // Update odometry
     // SwerveModulePosition[] wheelDeltas = new SwerveModulePosition[4];
     // for (int i = 0; i < 4; i++) {
@@ -175,16 +177,22 @@ public class Drive extends SubsystemBase {
 
     double timestampSeconds =
         Timer.getFPGATimestamp()
-            - (LimelightHelpers.getLatency_Pipeline("lightlight") / 1000.0)
+            - (LimelightHelpers.getLatency_Pipeline("limelight") / 1000.0)
             - (LimelightHelpers.getLatency_Capture("limelight") / 1000.0);
 
+    // Logger.recordOutput("sees", LimelightHelpers.getTV("limelight"));
+    // if (LimelightHelpers.getTV("limelight")) {
     Pose2d visionMeasurement = new Pose2d();
 
     visionMeasurement = LimelightHelpers.getBotPose2d("limelight");
 
     Logger.recordOutput("Odometry/Vision", visionMeasurement);
 
-    poseEstimator.addVisionMeasurement(visionMeasurement, timestampSeconds);
+    if (LimelightHelpers.getTV("limelight")) {
+      poseEstimator.addVisionMeasurement(visionMeasurement, timestampSeconds);
+    }
+
+    // }
   }
 
   /**
